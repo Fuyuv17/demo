@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFIT - Bản Đồ Cảnh Báo Rủi Ro Thuê Trọ Sinh Viên UTC</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome 6 Pro / Free CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+
+    <div id="app-container">
+
+        <!-- ==========================================================================
+             1. TOP FLOATING CAPSULE NAVBAR (CHUẨN STYLE SFIT - HOVER HIỆN RÕ)
+             ========================================================================== -->
+        <header class="top-navbar-wrapper">
+            <nav class="top-navbar-pill sfit-nav">
+                
+                <!-- SFIT Brand & Cute Mascot -->
+                <div class="brand-section" onclick="resetMapToUTC()" title="Về trường ĐH Giao thông Vận tải">
+                    <div class="sfit-mascot-icon">
+                        <i class="fa-solid fa-shield-cat"></i>
+                    </div>
+                    <div class="sfit-brand-text">
+                        <span class="sfit-title">Ổ quỷ</span>
+                        <span class="sfit-sub">Housing UTC</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Links chuẩn SFIT -->
+                <div class="sfit-nav-links">
+
+                    <!-- Mục 1 & 2: Dropdown Tiêu chí lọc -->
+                    <div class="sfit-filter-dropdown-wrapper">
+                        <button id="filter-trigger-btn" class="sfit-nav-item sfit-dropdown-btn">
+                            <span>Tiêu chí lọc</span>
+                            <span id="active-filter-count" class="active-filter-count" style="display: none;">0</span>
+                            <i class="fa-solid fa-chevron-down sfit-arrow-icon"></i>
+                        </button>
+
+                        <!-- DROPDOWN POPOVER BỘ LỌC (MỤC 1 & MỤC 2) -->
+                        <div id="filter-popover-card" class="filter-popover-card">
+                            <div class="popover-header">
+                                <span class="popover-title">
+                                    <i class="fa-solid fa-sliders" style="color: var(--primary-color);"></i>
+                                    Bộ lọc phòng trọ UTC
+                                </span>
+                                <button id="reset-filters-btn" class="reset-filter-btn">Đặt lại</button>
+                            </div>
+
+                            <!-- MỤC 1: TỐT, ỔN, RỦI RO -->
+                            <div class="filter-section-block">
+                                <label class="filter-label">
+                                    <i class="fa-solid fa-shield-halved"></i> Mục 1: Mức độ an toàn
+                                </label>
+                                <div class="filter-chip-group filter-risk-status-group" style="background: transparent; padding: 0;">
+                                    <button class="filter-btn-pill active" data-status="all">
+                                        <span class="status-dot all"></span> Tất cả
+                                    </button>
+                                    <button class="filter-btn-pill good" data-status="good">
+                                        <span class="status-dot good"></span> Tốt
+                                    </button>
+                                    <button class="filter-btn-pill medium" data-status="medium">
+                                        <span class="status-dot medium"></span> Ổn
+                                    </button>
+                                    <button class="filter-btn-pill risk" data-status="risk">
+                                        <span class="status-dot risk"></span> Rủi ro
+                                    </button>
+                                </div>
+                            </div>
+
+                            <hr style="border: none; border-top: 1px dashed #e2e8f0; margin: 4px 0;">
+
+                            <!-- MỤC 2.1: THEO GIÁ TIỀN: <= 2tr, 2-3tr, 3-5tr, >= 5tr -->
+                            <div class="filter-section-block">
+                                <label class="filter-label">
+                                    <i class="fa-solid fa-coins"></i> Mục 2: Theo giá tiền (tháng)
+                                </label>
+                                <div class="filter-chip-group" id="price-chips">
+                                    <button class="chip-option selected" data-value="all">Tất cả giá</button>
+                                    <button class="chip-option" data-value="<=2tr">&le; 2 triệu</button>
+                                    <button class="chip-option" data-value="2-3tr">2 - 3 triệu</button>
+                                    <button class="chip-option" data-value="3-5tr">3 - 5 triệu</button>
+                                    <button class="chip-option" data-value=">=5tr">&ge; 5 triệu</button>
+                                </div>
+                            </div>
+
+                            <!-- MỤC 2.2: THEO KHOẢNG CÁCH TỚI UTC: <= 1km, 1-2km, >= 3km -->
+                            <div class="filter-section-block">
+                                <label class="filter-label">
+                                    <i class="fa-solid fa-person-walking"></i> Khoảng cách tới cổng UTC
+                                </label>
+                                <div class="filter-chip-group" id="distance-chips">
+                                    <button class="chip-option selected" data-value="all">Tất cả cự ly</button>
+                                    <button class="chip-option" data-value="<=1km">&le; 1 km (Đi bộ)</button>
+                                    <button class="chip-option" data-value="1-2km">1 - 2 km (Xe đạp)</button>
+                                    <button class="chip-option" data-value=">=3km">&ge; 3 km (Xe máy)</button>
+                                </div>
+                            </div>
+
+                            <!-- MỤC 2.3: THEO ĐÁNH GIÁ 5 SAO -->
+                            <div class="filter-section-block">
+                                <label class="filter-label">
+                                    <i class="fa-solid fa-star" style="color: #ea580c;"></i> Đánh giá của SV UTC
+                                </label>
+                                <div class="filter-chip-group" id="rating-chips">
+                                    <button class="chip-option selected" data-value="all">Tất cả mức sao</button>
+                                    <button class="chip-option" data-value="5">5 ★ (Rất tốt)</button>
+                                    <button class="chip-option" data-value="4">&ge; 4 ★ (Ổn định)</button>
+                                    <button class="chip-option" data-value="3">&ge; 3 ★ (Bình thường)</button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Nút Danh sách trọ -->
+                    <button class="sfit-nav-item" id="nav-list-btn">
+                        Danh sách trọ
+                    </button>
+
+                </div>
+
+                <!-- Thanh tìm kiếm gọn gàng trong Navbar -->
+                <div class="sfit-search-container">
+                    <i class="fa-solid fa-magnifying-glass search-icon-left"></i>
+                    <input 
+                        type="text" 
+                        id="nav-search-input" 
+                        class="sfit-search-input" 
+                        placeholder="Tìm kiếm trọ, Chùa Láng..."
+                        autocomplete="off"
+                    >
+                    <button type="button" id="search-clear-btn" class="search-clear-btn">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Nút CTA "Ứng tuyển ->" chuẩn SFIT đổi thành "Báo cáo rủi ro ->" -->
+                <button id="cta-report-btn" class="sfit-cta-btn">
+                    <span>Báo cáo rủi ro</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+            </nav>
+        </header>
+
+        <!-- ==========================================================================
+             2. LEFT FLOATING VERTICAL PILL DOCK (ĐÃ XÓA PHẦN LỌC XE BUS, HOVER HIỆN RÕ)
+             ========================================================================== -->
+        <aside class="left-dock-container">
+            <div class="vertical-pill-dock sfit-left-dock">
+                <!-- Về trường ĐH GTVT -->
+                <button class="dock-btn active" id="dock-home-btn" title="Trường ĐH GTVT (UTC)">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span class="tooltip">Trường ĐH GTVT (UTC)</span>
+                </button>
+
+                <!-- Lớp vùng rủi ro (Ngập úng & PCCC) -->
+                <button class="dock-btn active" id="dock-riskzone-btn" title="Vùng rủi ro ngập & PCCC">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span class="tooltip">Lớp vùng rủi ro (Ngập & PCCC)</span>
+                </button>
+
+                <!-- Vòng bán kính 1km - 2km - 3km -->
+                <button class="dock-btn active" id="dock-radius-btn" title="Vòng bán kính 1-2-3km">
+                    <i class="fa-solid fa-circle-dot"></i>
+                    <span class="tooltip">Bán kính 1km - 2km - 3km</span>
+                </button>
+
+                <div class="dock-btn-divider"></div>
+
+                <!-- Chế độ bản đồ Google Maps -->
+                <button class="dock-btn map-type-btn active" data-type="roadmap" title="Google Maps Chuẩn">
+                    <i class="fa-solid fa-map"></i>
+                    <span class="tooltip">Google Maps Chuẩn</span>
+                </button>
+
+                <button class="dock-btn map-type-btn" data-type="satellite" title="Google Vệ Tinh">
+                    <i class="fa-solid fa-satellite"></i>
+                    <span class="tooltip">Google Vệ Tinh</span>
+                </button>
+
+                <button class="dock-btn map-type-btn" data-type="traffic" title="Google Giao Thông">
+                    <i class="fa-solid fa-traffic-light"></i>
+                    <span class="tooltip">Google Giao Thông</span>
+                </button>
+
+                <div class="dock-btn-divider"></div>
+
+                <!-- Mở danh sách trọ -->
+                <button class="dock-btn" id="toggle-list-btn" title="Danh sách phòng trọ">
+                    <i class="fa-solid fa-list-ul"></i>
+                    <span class="tooltip">Danh sách phòng trọ</span>
+                </button>
+
+                <!-- Báo cáo trọ rủi ro -->
+                <button class="dock-btn" id="dock-report-btn" title="Đóng góp trọ mới">
+                    <i class="fa-solid fa-circle-plus"></i>
+                    <span class="tooltip">Báo cáo trọ rủi ro</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ==========================================================================
+             3. BẢN ĐỒ GOOGLE MAPS LEAFLET TRUNG TÂM
+             ========================================================================== -->
+        <main id="map"></main>
+
+        <!-- ==========================================================================
+             4. BOTTOM FLOATING PILL BAR (CHỈ HIỆN TỔNG SỐ TRỌ TỐT, ỔN, RỦI RO)
+             ========================================================================== -->
+        <footer class="bottom-dock-wrapper">
+            <div class="bottom-dock-pill sfit-bottom-dock">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12.5px; font-weight: 700; color: #475569;">
+                        Tổng số:
+                    </span>
+                    <span class="badge-counter" id="count-total-rentals" style="font-size: 12px; font-weight: 800; background: #f1f5f9; color: #0f172a; padding: 3px 10px;">17 trọ</span>
+                </div>
+
+                <div class="bottom-dock-divider"></div>
+
+                <div style="display: flex; align-items: center; gap: 16px; font-size: 12.5px; font-weight: 600;">
+                    <span style="color: #16a34a; display: flex; align-items: center; gap: 5px;">
+                        <span class="status-dot good"></span> Tốt: <strong id="count-good-rentals">7</strong>
+                    </span>
+                    <span style="color: #d97706; display: flex; align-items: center; gap: 5px;">
+                        <span class="status-dot medium"></span> Ổn: <strong id="count-medium-rentals">5</strong>
+                    </span>
+                    <span style="color: #dc2626; display: flex; align-items: center; gap: 5px;">
+                        <span class="status-dot risk"></span> Rủi ro: <strong id="count-risk-rentals">5</strong>
+                    </span>
+                </div>
+            </div>
+        </footer>
+
+        <!-- ==========================================================================
+             5. SIDE DRAWER: DANH SÁCH PHÒNG TRỌ KÈM CHI TIẾT
+             ========================================================================== -->
+        <div id="side-drawer" class="side-drawer">
+            <div class="drawer-header">
+                <div class="drawer-title-group">
+                    <i class="fa-solid fa-map-location-dot" style="color: var(--primary-color); font-size: 18px;"></i>
+                    <h3 class="drawer-title">Phòng Trọ Quanh ĐH GTVT</h3>
+                </div>
+                <button id="close-drawer-btn" class="drawer-close-btn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="drawer-content" id="drawer-rentals-list">
+                <!-- Danh sách phòng trọ được render bằng JS -->
+            </div>
+        </div>
+
+        <!-- ==========================================================================
+             6. MODAL XEM CHI TIẾT PHÒNG TRỌ & ĐÁNH GIÁ RỦI RO
+             ========================================================================== -->
+        <div id="rental-detail-modal" class="modal-backdrop">
+            <div class="modal-dialog">
+                <div class="modal-header-hero">
+                    <img id="modal-hero-img" src="" alt="Ảnh phòng trọ">
+                    <button class="modal-close-icon">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="modal-body-scroll">
+                    <div>
+                        <h2 id="modal-rental-title" style="font-size: 19px; font-weight: 800; color: #0f172a;"></h2>
+                        <p id="modal-rental-address" style="font-size: 12.5px; color: #64748b; margin-top: 4px;"></p>
+                    </div>
+
+                    <!-- THANG ĐO RỦI RO (RISK METER) -->
+                    <div class="risk-meter-box">
+                        <div style="flex: 1;">
+                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+                                Chỉ số rủi ro trọ (NCKH Assessment)
+                            </span>
+                            <div class="risk-meter-score">
+                                <span class="score-num" id="modal-risk-score-num">0</span>
+                                <span style="font-size: 14px; color: #64748b; font-weight: 600;">/ 100</span>
+                            </div>
+                            <div class="risk-progress-bar-bg">
+                                <div class="risk-progress-fill" id="modal-risk-score-bar" style="width: 0%;"></div>
+                            </div>
+                            <p id="modal-risk-status-text" style="font-size: 12px; font-weight: 700; margin-top: 6px;"></p>
+                        </div>
+                    </div>
+
+                    <!-- LƯỚI THÔNG TIN CHI PHÍ & KHOẢNG CÁCH -->
+                    <div class="info-grid-2col">
+                        <div class="info-item-tile">
+                            <div class="label">Giá thuê phòng</div>
+                            <div class="val" id="modal-price" style="color: #15803d;"></div>
+                        </div>
+                        <div class="info-item-tile">
+                            <div class="label">Khoảng cách tới UTC</div>
+                            <div class="val" id="modal-distance"></div>
+                        </div>
+                        <div class="info-item-tile">
+                            <div class="label">Giá tiền điện</div>
+                            <div class="val" id="modal-elec"></div>
+                        </div>
+                        <div class="info-item-tile">
+                            <div class="label">Giá tiền nước</div>
+                            <div class="val" id="modal-water"></div>
+                        </div>
+                    </div>
+
+                    <!-- CẢNH BÁO RỦI RO (ĐỎ) -->
+                    <div class="bullet-list-box warning">
+                        <div style="font-size: 13px; font-weight: 800; color: #b91c1c; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            CẢNH BÁO RỦI RO & LƯU Ý KHI THUÊ
+                        </div>
+                        <div id="modal-risks-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                    </div>
+
+                    <!-- ĐIỂM CỘNG / AN TOÀN (XANH) -->
+                    <div class="bullet-list-box safe">
+                        <div style="font-size: 13px; font-weight: 800; color: #15803d; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-shield-check"></i>
+                            TIÊU CHUẨN AN TOÀN ĐẠT ĐƯỢC
+                        </div>
+                        <div id="modal-highlights-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                    </div>
+
+                    <!-- MÔ TẢ TỔNG QUAN -->
+                    <div>
+                        <h4 style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Đánh giá thực tế từ sinh viên UTC:</h4>
+                        <p id="modal-description" style="font-size: 13px; color: #475569; line-height: 1.6;"></p>
+                    </div>
+
+                    <!-- NÚT CHỈ ĐƯỜNG ĐẾN CỔNG ĐH GTVT -->
+                    <button onclick="showToast('Đang mô phỏng tuyến đường tối ưu tới cổng số 3 Cầu Giấy (UTC)...')" class="submit-report-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fa-solid fa-diamond-turn-right"></i>
+                        <span>Xem lộ trình di chuyển tới cổng trường UTC</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================================================
+             7. MODAL BÁO CÁO RỦI RO PHÒNG TRỌ MỚI
+             ========================================================================== -->
+        <div id="report-risk-modal" class="modal-backdrop">
+            <div class="modal-dialog" style="max-width: 520px;">
+                <div style="padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-flag" style="color: #dc2626; font-size: 18px;"></i>
+                        <h3 style="font-size: 16px; font-weight: 800; color: #0f172a;">Báo Cáo Rủi Ro Phòng Trọ Quanh UTC</h3>
+                    </div>
+                    <button class="modal-close-icon" style="position: static; width: 32px; height: 32px;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <form id="report-risk-form" style="padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;">
+                    <div class="form-group">
+                        <label class="form-label">Tên nhà trọ / Khu trọ:</label>
+                        <input type="text" id="report-rental-name" class="form-control" placeholder="Ví dụ: Nhà trọ số 18 ngõ 84 Chùa Láng..." required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Địa chỉ cụ thể:</label>
+                        <input type="text" id="report-rental-addr" class="form-control" placeholder="Ngõ, số nhà, phố (khu vực Cầu Giấy, Láng Thượng...)" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Loại rủi ro phát hiện:</label>
+                        <select id="report-risk-type" class="form-control">
+                            <option value="pccc">Nguy cơ PCCC (Chuồng cọp bít kín, sạc xe điện mất kiểm soát)</option>
+                            <option value="coc">Lừa đảo tiền cọc / Phụ phí vô lý không báo trước</option>
+                            <option value="flood">Ngập úng sâu khi mưa lớn tràn vào phòng</option>
+                            <option value="security">An ninh kém, trộm cắp, ngõ tối nguy hiểm</option>
+                            <option value="other">Rủi ro khác</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Chi tiết trải nghiệm của bạn (SV UTC):</label>
+                        <textarea id="report-risk-desc" class="form-control" rows="3" placeholder="Mô tả cụ thể sự việc để cảnh báo cho các bạn sinh viên K62, K63, K64..." required></textarea>
+                    </div>
+                    <button type="submit" class="submit-report-btn">
+                        <i class="fa-solid fa-paper-plane"></i> Gửi thông tin kiểm duyệt NCKH
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ==========================================================================
+             8. MODAL CẤU HÌNH KẾT NỐI GOOGLE MAPS API
+             ========================================================================== -->
+        <div id="google-api-modal" class="modal-backdrop">
+            <div class="modal-dialog" style="max-width: 540px;">
+                <div style="padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-brands fa-google" style="color: #4285f4; font-size: 22px;"></i>
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 800; color: #0f172a;">Kết Nối Google Maps API</h3>
+                            <p style="font-size: 11.5px; color: #64748b;">Dự án NCKH Đại Học Giao Thông Vận Tải</p>
+                        </div>
+                    </div>
+                    <button class="modal-close-icon" style="position: static; width: 32px; height: 32px;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 14px; padding: 12px 16px; font-size: 12.5px; color: #1e40af; line-height: 1.5;">
+                        <strong style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                            <i class="fa-solid fa-circle-check" style="color: #2563eb;"></i>
+                            Bản đồ Google Maps đã được kết nối & hiển thị sắc nét!
+                        </strong>
+                        Hệ thống đang tải trực tiếp bản đồ vector độ phân giải cao của Google Maps (chuẩn tiếng Việt, hiển thị rõ Trường ĐH Giao Thông Vận Tải, Hồ Thủ Lệ, Ga Cầu Giấy như ảnh mẫu).
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nhập Google Maps API Key cá nhân (Tùy chọn):</label>
+                        <input type="text" id="google-api-key-input" class="form-control" placeholder="AIzaSy..." style="font-family: monospace;">
+                        <span style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                            Khi nhập API Key, hệ thống sẽ kích hoạt thêm dịch vụ <strong>Google Places Autocomplete</strong> và <strong>Distance Matrix API</strong>.
+                        </span>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button id="save-api-key-btn" class="submit-report-btn" style="flex: 1; margin: 0; background: linear-gradient(135deg, #1d4ed8, #2563eb);">
+                            <i class="fa-solid fa-key"></i> Lưu & Kích hoạt API Key
+                        </button>
+                        <button id="clear-api-key-btn" class="filter-trigger-btn" style="color: #dc2626; border-color: #fecaca; background: #fef2f2;">
+                            <i class="fa-solid fa-trash-can"></i> Xóa Key
+                        </button>
+                    </div>
+
+                    <div style="font-size: 12px; color: #64748b; border-top: 1px dashed #e2e8f0; padding-top: 12px;">
+                        <strong>Cách lấy Google Maps API Key miễn phí:</strong>
+                        <ol style="margin-left: 18px; margin-top: 4px; line-height: 1.6;">
+                            <li>Truy cập <a href="https://console.cloud.google.com/google/maps-apis" target="_blank" style="color: #2563eb; font-weight: 600;">Google Cloud Console</a>.</li>
+                            <li>Bật <em>Maps JavaScript API</em> và <em>Places API</em>.</li>
+                            <li>Tạo <em>Credentials &rarr; API Key</em> và dán vào ô bên trên.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================================================
+             9. TOAST THÔNG BÁO NHANH
+             ========================================================================== -->
+        <div id="toast-msg" class="toast-msg"></div>
+
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Project Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/app.js"></script>
+
+</body>
+</html>
